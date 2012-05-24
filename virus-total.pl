@@ -12,7 +12,7 @@ exit(0);
 }
 
 # OO-interface.
-my $api = VT::API->new(key => '5ccd7867b4a0b309193cffde5cc938fd30a15f718e860bfc824db7ba251419c2');
+my $api = VT::API->new(key => 'ADD YOUR VIRUS TOTAL KEY HERE');
 
 switch ($ARGV[0]) {
 
