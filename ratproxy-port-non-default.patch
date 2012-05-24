@@ -1,0 +1,73 @@
+# Created by Cl3BeeR <clebeer[at]gmail[dot]com>
+# Thu May 06 2010
+--- ratproxy.c	2009-03-31 07:32:10.000000000 -0300
++++ ratproxy.c	2010-05-06 09:59:06.167625043 -0300
+@@ -77,6 +77,7 @@
+ _u8* trace_dir;					/* Trace directory            */
+ _u32 proxy_port = 8080;				/* Upstream proxy port        */
+ _u8  use_len;					/* Use length, not cksum      */
++_u8* non_http;					/* Accept requests for non-HTTP ports      */
+ 
+ static FILE* outfile;				/* Output file descriptor     */
+ 
+@@ -105,6 +106,7 @@
+         "   -m            - log all active content referenced across domains\n"
+         "   -X            - disruptively validate XSRF, XSS protections\n"
+         "   -C            - try to auto-correct persistent side effects of -X\n"
++        "   -N            - Accept requests to non-HTTP ports \n"
+         "   -k            - flag HTTP requests as bad (for HTTPS-only applications)\n"
+         "   -a            - indiscriminately report all visited URLs\n\n"
+ 
+@@ -1660,9 +1662,9 @@
+ 
+   signal(SIGPIPE, SIG_IGN);
+ 
+-  debug("ratproxy version " VERSION " by <lcamtuf@google.com>\n");
++  debug("ratproxy version " VERSION " by <lcamtuf@google.com> Non-http Patch by <clebeer@gmail.com>\n");
+ 
+-  while ((opt = getopt(argc,argv,"+w:v:p:d:P:itxgjmafske2clXCr")) > 0) 
++  while ((opt = getopt(argc,argv,"+w:v:p:d:P:itxgjmafske2clXCrN")) > 0) 
+     switch (opt) {
+ 
+       case 'w': {
+@@ -1726,6 +1728,10 @@
+         all_xss = 1;
+         break;
+ 
++      case 'N':
++	non_http = 1;
++	break;
++
+       case 'g':
+         get_xsrf = 1;
+         break;
+--- http.c	2009-05-13 16:41:01.000000000 -0300
++++ http.c	2010-05-04 10:45:45.366625269 -0300
+@@ -53,6 +53,7 @@
+ extern _u8* use_proxy;		/* Runtime setting exports from ratproxy. */
+ extern _u32 proxy_port;
+ extern _u8  use_len;
++extern _u8* non_http;
+ 
+ static _u8 srv_buf[MAXLINE],	/* libc IO buffers */
+            cli_buf[MAXLINE];
+@@ -496,7 +497,7 @@
+     if (!ret->port || ret->port > 65535) 
+       http_error(client,"Illegal port specification",1);
+ 
+-    if (ret->port < 1024 && ret->port != 80 && ret->port != 443)
++   if (!non_http && (ret->port < 1024 && ret->port != 80 && ret->port != 443))
+       http_error(client,"Access to this port denied",1);
+ 
+     *x = 0; 
+--- config.h	2009-05-13 16:40:38.000000000 -0300
++++ config.h	2010-05-06 10:00:03.570624548 -0300
+@@ -26,7 +26,7 @@
+ 
+ #include "types.h"
+ 
+-#define VERSION		"1.58-beta"
++#define VERSION		"1.58-beta-CleBe3R-Non-http-Patch"
+ 
+ /* Maximum request / response header line length (HTTP traffic
+    that exceeds this limit will be rejected). */
